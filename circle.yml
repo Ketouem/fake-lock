@@ -1,0 +1,16 @@
+machine:
+  python:
+    version: 2.7
+
+dependencies:
+  pre:
+   - pip install --upgrade pip
+  override:
+   - pip install .
+  post:
+   - pip install -r requirements_test.txt
+
+test:
+  override:
+    - nosetests
+
