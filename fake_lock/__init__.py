@@ -42,10 +42,15 @@ class _BaseWrapper:
             raise PermissionDeniedError()
 
     def _disable_token(self):
-        disabled = False
-        if self._r('get', endpoint='/disable_access_token').status_code == 204:
-            self._api_token = None
-            disabled = True
+        try:
+            resp = self._r('get', endpoint='/disable_access_token')
+            if resp.status_code == 204:
+                self._api_token = None
+                disabled = True
+            else:
+                disabled = False
+        except BadTokenError:
+            disabled = False
         return disabled
 
     def __repr__(self):

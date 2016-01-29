@@ -61,5 +61,5 @@ class BaseTests(TestCase):
             'https://api.real-debrid.com/rest/1.0/disable_access_token',
             status=401
         )
-        assert_false(self._base._disable_token)
+        assert_false(self._base._disable_token())
         eq_(self._base._api_token, self._token)
