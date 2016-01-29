@@ -6,7 +6,9 @@ from nose.tools import (
 )
 import responses
 
-from fake_lock import _BaseWrapper, BadTokenError, PermissionDeniedError
+from fake_lock import (
+    _BaseWrapper, BadTokenError, PermissionDeniedError, RealException
+)
 
 
 class BaseTests(TestCase):
@@ -20,17 +22,17 @@ class BaseTests(TestCase):
         assert_dict_equal(
             headers,
             {
-                "Authorization": "Bearer {}".format(self._token),
-                "Accept": "application/json",
-                "Content-Type": "application/json"
+                'Authorization': 'Bearer {}'.format(self._token),
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
             }
         )
         headers = self._base._build_headers('get')
         assert_dict_equal(
             headers,
             {
-                "Authorization": "Bearer {}".format(self._token),
-                "Accept": "application/json"
+                'Authorization': 'Bearer {}'.format(self._token),
+                'Accept': 'application/json'
             }
         )
 
@@ -42,6 +44,10 @@ class BaseTests(TestCase):
         assert_raises(
             PermissionDeniedError,
             self._base._handle_error_code, 403
+        )
+        assert_raises(
+            RealException,
+            self._base._handle_error_code, 478
         )
 
     @responses.activate
@@ -63,3 +69,42 @@ class BaseTests(TestCase):
         )
         assert_false(self._base._disable_token())
         eq_(self._base._api_token, self._token)
+
+    @responses.activate
+    def test_004a_test_request_response_with_json(self):
+        api_response_data = {'data': 'unitTest'}
+        responses.add(
+            responses.GET,
+            'https://api.real-debrid.com/rest/1.0/fakeEndpoint',
+            status=200,
+            json=api_response_data,
+            content_type='application/json'
+        )
+        response = self._base._r('get', endpoint='/fakeEndpoint')
+        assert_dict_equal(response, api_response_data)
+
+    @responses.activate
+    def test_004b_test_request_not_json(self):
+        api_response_data = "<html>unittest</html>"
+        responses.add(
+            responses.GET,
+            'https://api.real-debrid.com/rest/1.0/fakeEndpoint',
+            status=200,
+            body=api_response_data,
+            content_type='text/html'
+        )
+        response = self._base._r('get', endpoint='/fakeEndpoint')
+        eq_(response.status_code, 200)
+        eq_(response.content, api_response_data)
+
+    @responses.activate
+    def test_004c_test_request_error(self):
+        responses.add(
+            responses.GET,
+            'https://api.real-debrid.com/rest/1.0/fakeEndpoint',
+            status=478
+        )
+        assert_raises(
+            RealException,
+            self._base._r, 'get', endpoint='/fakeEndpoint'
+        )

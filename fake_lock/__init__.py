@@ -40,6 +40,8 @@ class _BaseWrapper:
             raise BadTokenError()
         elif code == 403:
             raise PermissionDeniedError()
+        else:
+            raise RealException("Error {}".format(code))
 
     def _disable_token(self):
         try:
