@@ -5,6 +5,7 @@ class _BaseWrapper:
 
     URL = "https://api.real-debrid.com/rest/1.0"
     ENDPOINT = None
+    JSON_DECODER = None
 
     def __init__(self, api_token, endpoint=None):
         self._api_token = api_token
@@ -31,7 +32,7 @@ class _BaseWrapper:
         if resp.status_code >= 400:
             self._handle_error_code(resp.status_code)
         if resp.headers.get('Content-Type') == 'application/json':
-            return resp.json()
+            return resp.json(cls=self.JSON_DECODER)
         else:
             return resp
 
@@ -57,6 +58,25 @@ class _BaseWrapper:
 
     def __repr__(self):
         return "<{}('{}')>".format(self.__class__.__name__, self._endpoint)
+
+
+class _BaseUnserializedObject:
+
+    FIELDS = set()
+
+    def __init__(self, **kwargs):
+        for f in self.FIELDS:
+            setattr(self, f, kwargs.get(f))
+        for o in set(kwargs.keys()).difference(self.FIELDS):
+            setattr(self, o, kwargs.get(o))
+
+    def __repr__(self):
+        return "<{}({})>".format(
+            self.__class__.__name__,
+            ",".join(
+                "{}={}".format(k, self.__dict__[k]) for k in self.__dict__
+            )
+        )
 
 
 class RealException(Exception):
