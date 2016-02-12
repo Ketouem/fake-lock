@@ -20,7 +20,7 @@ class _BaseWrapper:
             hds.update({"Content-Type": "application/json"})
         return hds
 
-    def _r(self, verb, data=None, endpoint=None):
+    def _r(self, verb, data=None, endpoint=None, decoder=None):
         f_url = '{}{}'.format(
             self.URL,
             self._endpoint if endpoint is None else endpoint
@@ -32,7 +32,8 @@ class _BaseWrapper:
         if resp.status_code >= 400:
             self._handle_error_code(resp.status_code)
         if resp.headers.get('Content-Type') == 'application/json':
-            return resp.json(cls=self.JSON_DECODER)
+            decoder = self.JSON_DECODER if decoder is None else decoder
+            return resp.json(cls=decoder)
         else:
             return resp
 
@@ -77,6 +78,10 @@ class _BaseUnserializedObject:
                 "{}={}".format(k, self.__dict__[k]) for k in self.__dict__
             )
         )
+
+    @classmethod
+    def filter(cls, dico):
+        return {k: dico[k] for k in cls.FIELDS if k in dico}
 
 
 class RealException(Exception):

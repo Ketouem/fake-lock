@@ -7,11 +7,12 @@ from nose.tools import (
 import responses
 
 from fake_lock import (
-    _BaseWrapper, BadTokenError, PermissionDeniedError, RealException
+    _BaseUnserializedObject, _BaseWrapper,
+    BadTokenError, PermissionDeniedError, RealException
 )
 
 
-class BaseTests(TestCase):
+class BaseWrapperTests(TestCase):
 
     def setUp(self):
         self._token = 'FAKETOKEN'
@@ -108,3 +109,22 @@ class BaseTests(TestCase):
             RealException,
             self._base._r, 'get', endpoint='/fakeEndpoint'
         )
+
+
+class BaseUnserializedObjectTests(TestCase):
+
+    def setUp(self):
+        class TestClass(_BaseUnserializedObject):
+            FIELDS = {'value1', 'value2'}
+        self.Class = TestClass
+
+    def test_001_init_object(self):
+        o = self.Class(value1=1, value2=None, another_value=True)
+        eq_(o.value1, 1)
+        assert_is_none(o.value2)
+        assert_true(o.another_value)
+
+    def test_002_filter_dict_from_fields(self):
+        dico = {'value1': 'v1', 'valueN': 'vN'}
+        filtered = self.Class.filter(dico)
+        assert_dict_equal(filtered, {'value1': 'v1'})
